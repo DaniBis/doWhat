@@ -30,7 +30,8 @@ export default function MenuBar() {
                     <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
                 </a>
                 <div className="flex items-center md:order-2">
-                    <div id="user" style={{display:"none"}}>
+                {isUserVisible ? (
+                    <div id="user">
                         <button
                             type="button"
                             className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
@@ -79,6 +80,7 @@ export default function MenuBar() {
                             </svg>
                         </button>
                     </div>
+                ): (
                     <div id="loginSignup">
                     <button
                          className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
@@ -89,6 +91,7 @@ export default function MenuBar() {
                          id="login-menu-button"
                          onClick ={()=>{ navigate("/signup")}}> SignUp </button>
                     </div>
+                )}
                 </div>
                 <div className={`items-center justify-between w-full md:flex md:w-auto md:order-1 ${isNavMenuVisible ? '' : 'hidden'}`} id="navbar-user">
                     <ul className="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
