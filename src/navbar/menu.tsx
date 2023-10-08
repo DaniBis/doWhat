@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import {useNavigate} from "react-router-dom"; 
+import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom"; 
+import Login from './../components/Login';
+import { auth, db } from './../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function MenuBar() {
     const [isUserDropdownVisible, setUserDropdownVisible] = useState(false);
     const [isNavMenuVisible, setNavMenuVisible] = useState(false);
-    const [isUserVisible, setIsUserVisible] = useState(false);
+    const [displayName, setDisplayName] = useState('');
 
     let navigate = useNavigate(); 
 
@@ -13,15 +16,43 @@ export default function MenuBar() {
         setUserDropdownVisible(!isUserDropdownVisible);
     };
 
-    const isLoggedIn = () => {
-        setIsUserVisible(!isUserVisible);
-    };
-
     // Function to toggle the navigation menu
     const toggleNavMenu = () => {
         setNavMenuVisible(!isNavMenuVisible);
     };
 
+    // Function to handle logout
+    const handleLogout = async () => {
+        try {
+            await auth.signOut(); // Sign out the user
+            navigate("/login"); // Redirect to the login page or any other appropriate page
+        } catch (error) {
+            console.error("Error logging out:", error);
+        }
+    };
+
+    useEffect(() => {
+        // Fetch the user's display name from Firestore
+        const fetchDisplayName = async () => {
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    // Create a query to find the user document based on the username
+                    const q = query(collection(db, 'Users'), where('username', '==', user.displayName));
+                    const querySnapshot = await getDocs(q);
+                    
+                    querySnapshot.forEach((doc) => {
+                        const userData = doc.data();
+                        setDisplayName(userData.displayName);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching display name:", error);
+            }
+        };
+
+        fetchDisplayName(); // Call the function when the component mounts
+    }, []);
     return (
         <nav className="bg-white border-gray-200 dark:bg-gray-900">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 relative"> {/* Make the parent relative */}
@@ -30,7 +61,7 @@ export default function MenuBar() {
                     <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
                 </a>
                 <div className="flex items-center md:order-2">
-                {isUserVisible ? (
+                { <Login /> ? (
                     <div id="user">
                         <button
                             type="button"
@@ -48,8 +79,7 @@ export default function MenuBar() {
                             style={{ top: '4rem', right: '-2vw' }} 
                         >
                             <div className="px-4 py-3">
-                                <span className="block text-sm text-gray-900 dark:text-white">Bonnie Green</span>
-                                <span className="block text-sm  text-gray-500 truncate dark:text-gray-400">name@flowbite.com</span>
+                                <span className="block text-sm text-gray-900 dark:text-white">{displayName}</span>
                             </div>
                             <ul className="py-2" aria-labelledby="user-menu-button">
                                 <li>
@@ -62,7 +92,7 @@ export default function MenuBar() {
                                     <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Earnings</a>
                                 </li>
                                 <li>
-                                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</a>
+                                    <a onClick={handleLogout} href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</a>
                                 </li>
                             </ul>
                         </div>
