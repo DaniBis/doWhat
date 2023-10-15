@@ -39,6 +39,7 @@ export default function MenuBar() {
                 if (user) {
                     // Create a query to find the user document based on the username
                     const q = query(collection(db, 'Users'), where('username', '==', user.displayName));
+                    console.log(q);
                     const querySnapshot = await getDocs(q);
                     
                     querySnapshot.forEach((doc) => {
