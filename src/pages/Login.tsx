@@ -2,47 +2,39 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import FormAction from '../components/FormAction';
 import Input from '../components/Input';
-import { db } from '../firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase'; // Import your auth instance
 
 export default function Login() {
-  let navigate = useNavigate();
-  const [loginState, setLoginState] = useState({ username: '', password: '' });
+  const navigate = useNavigate();
+  const [loginState, setLoginState] = useState({ 'email-address': '', password: '' });
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e) => setLoginState({ ...loginState, [e.target.id]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { username, password } = loginState;
+    const { 'email-address': email, password } = loginState;
 
-    const isUserExists = await checkIfUserExists(username, password);
-
-    if (isUserExists) {
-        navigate('/activities');
-    } else {
-      setErrorMessage('Invalid username or password');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/activities');
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setErrorMessage('Invalid email or password');
     }
-  };
-
-  const checkIfUserExists = async (username, password) => {
-    const usersCollection = collection(db, 'Users');
-    const q = query(usersCollection, where('username', '==', username), where('password', '==', password));
-    const querySnapshot = await getDocs(q);
-
-    return !querySnapshot.empty;
   };
 
   return (
     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
       <div className="">
         <Input
-          id="username"
-          type="text"
-          labelText="Username"
-          placeholder="Enter your username"
+          id="email-address"
+          type="email"
+          labelText="Email address"
+          placeholder="Enter your email address"
           handleChange={handleChange}
-          value={loginState.username}
+          value={loginState['email-address']}
           isRequired={true}
         />
         <Input

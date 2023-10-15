@@ -4,12 +4,7 @@ import Signup from "../components/Signup";
 export default function SignupPage(){
     return(
         <>
-            <Header
-              heading="Signup to create an account"
-              paragraph="Already have an account? "
-              linkName="Login"
-              linkUrl="/"
-            />
+        <h1>Sign up to create an account</h1>
             <Signup/>
         </>
     )

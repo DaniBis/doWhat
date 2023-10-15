@@ -4,6 +4,7 @@ import FormAction from "./FormAction";
 import Input from "./Input";
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebase'; // directly import the auth instance from your firebase configuration
+import { useNavigate } from 'react-router-dom'; // import useNavigate from react-router-dom
 
 const fields = signupFields;
 let fieldsState = {};
@@ -13,6 +14,7 @@ fields.forEach(field => (fieldsState[field.id] = ''));
 export default function Signup() {
   const [signupState, setSignupState] = useState(fieldsState);
   const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate(); // instantiate the useNavigate function
 
   const handleChange = (e) =>
     setSignupState({ ...signupState, [e.target.id]: e.target.value });
@@ -32,6 +34,8 @@ export default function Signup() {
         });
     
         console.log('User signed up successfully!');
+
+        navigate('/login'); // Redirect to the login page after a successful sign-up
       } catch (error) {
         console.error('Error signing up:', error);
     
@@ -43,7 +47,6 @@ export default function Signup() {
         }
       }
     };
-    
 
   const clearErrorMessage = () => {
     setErrorMessage('');

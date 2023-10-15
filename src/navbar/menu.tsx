@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; 
-import Login from './../components/Login';
+import Login from './../pages/Login';
 import { auth, db } from './../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -8,52 +8,41 @@ export default function MenuBar() {
     const [isUserDropdownVisible, setUserDropdownVisible] = useState(false);
     const [isNavMenuVisible, setNavMenuVisible] = useState(false);
     const [displayName, setDisplayName] = useState('');
+    const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); // State to track if the user is logged in
 
     let navigate = useNavigate(); 
 
-    // Function to toggle the user dropdown
     const toggleUserDropdown = () => {
         setUserDropdownVisible(!isUserDropdownVisible);
     };
 
-    // Function to toggle the navigation menu
     const toggleNavMenu = () => {
         setNavMenuVisible(!isNavMenuVisible);
     };
 
-    // Function to handle logout
     const handleLogout = async () => {
         try {
-            await auth.signOut(); // Sign out the user
-            navigate("/login"); // Redirect to the login page or any other appropriate page
+            await auth.signOut();
+            navigate("/login");
         } catch (error) {
             console.error("Error logging out:", error);
         }
     };
 
     useEffect(() => {
-        // Fetch the user's display name from Firestore
-        const fetchDisplayName = async () => {
-            try {
-                const user = auth.currentUser;
-                if (user) {
-                    // Create a query to find the user document based on the username
-                    const q = query(collection(db, 'Users'), where('username', '==', user.displayName));
-                    console.log(q);
-                    const querySnapshot = await getDocs(q);
-                    
-                    querySnapshot.forEach((doc) => {
-                        const userData = doc.data();
-                        setDisplayName(userData.displayName);
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching display name:", error);
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                setIsUserLoggedIn(true);
+                setDisplayName(user.displayName);
+            } else {
+                setIsUserLoggedIn(false);
+                setDisplayName('');
             }
-        };
-
-        fetchDisplayName(); // Call the function when the component mounts
+        });
+    
+        return () => unsubscribe();  // Cleanup the listener
     }, []);
+
     return (
         <nav className="bg-white border-gray-200 dark:bg-gray-900">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 relative"> {/* Make the parent relative */}
@@ -62,7 +51,7 @@ export default function MenuBar() {
                     <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
                 </a>
                 <div className="flex items-center md:order-2">
-                { <Login /> ? (
+                {isUserLoggedIn ? (
                     <div id="user">
                         <button
                             type="button"
