@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom"; 
-import Login from './../pages/Login';
-import { auth, db } from './../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth } from './../firebase';
+import logoplaceholder from './../assets/logoplaceholder.png';
+import user from './../assets/user.png';
 
 export default function MenuBar() {
     const [isUserDropdownVisible, setUserDropdownVisible] = useState(false);
-    const [isNavMenuVisible, setNavMenuVisible] = useState(false);
     const [displayName, setDisplayName] = useState('');
-    const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); // State to track if the user is logged in
-
+    const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+    const [isNavMenuVisible, setNavMenuVisible] = useState(false);
+    
     let navigate = useNavigate(); 
 
     const toggleUserDropdown = () => {
@@ -30,43 +30,48 @@ export default function MenuBar() {
     };
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(user => {
+        const unsubscribe = auth.onAuthStateChanged(async user => {
             if (user) {
                 setIsUserLoggedIn(true);
-                setDisplayName(user.displayName);
+                
+                // Reload the user's auth token to ensure latest info is fetched
+                await user.reload();
+    
+                // Update the displayName using the reloaded user object
+                setDisplayName(user.displayName || "User");
+                
             } else {
                 setIsUserLoggedIn(false);
                 setDisplayName('');
             }
         });
     
-        return () => unsubscribe();  // Cleanup the listener
+        return () => unsubscribe();
     }, []);
 
     return (
         <nav className="bg-white border-gray-200 dark:bg-gray-900">
-            <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 relative"> {/* Make the parent relative */}
+            <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4 relative">
                 <a href="https://flowbite.com/" className="flex items-center">
-                    <img src="https://flowbite.com/docs/images/logo.svg" className="h-8 mr-3" alt="Flowbite Logo" />
-                    <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
+                    <img src={logoplaceholder} className="h-8 mr-3" alt="Logo Placeholder" />
                 </a>
                 <div className="flex items-center md:order-2">
                 {isUserLoggedIn ? (
                     <div id="user">
                         <button
                             type="button"
-                            className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                            className="flex mr-3 text-sm rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                             id="user-menu-button"
                             aria-expanded={isUserDropdownVisible}
-                            onClick={toggleUserDropdown}
+                            onClick={toggleUserDropdown}S
                         >
                             <span className="sr-only">Open user menu</span>
-                            <img className="w-8 h-8 rounded-full" src="/docs/images/people/profile-picture-3.jpg" alt="user photo" />
+                            <img className="w-8 h-8 rounded-full" src={user} alt="user photo" />
                         </button>
                         <div
                             className={`z-50 ${isUserDropdownVisible ? 'absolute' : 'hidden'} my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600`}
                             id="user-dropdown"
-                            style={{ top: '4rem', right: '-2vw' }} 
+                            style={{ right: '0vw' }} 
                         >
                             <div className="px-4 py-3">
                                 <span className="block text-sm text-gray-900 dark:text-white">{displayName}</span>
@@ -101,13 +106,13 @@ export default function MenuBar() {
                         </button>
                     </div>
                 ): (
-                    <div id="loginSignup">
+                    <div id="loginSignup" className='flex items-center md:order-2'>
                     <button
-                         className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                         className="flex mr-3 text-sm rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                          id="login-menu-button"
                          onClick ={()=>{ navigate("/login")}}> Login </button>
                     <button
-                         className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                         className="flex mr-3 text-sm rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
                          id="login-menu-button"
                          onClick ={()=>{ navigate("/signup")}}> SignUp </button>
                     </div>
