@@ -1,127 +1,78 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import { useQuery, useQueryClient } from 'react-query';
+import { collection, addDoc, getDocs, DocumentData } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import { addActivity } from './../components/ActivityController';
+import  GoogleActivities  from './../components/ActivityController';
 
 interface Activity {
   id: string;
-  name: string;
-  geolocation: string; // Use the appropriate type for geolocation
-  openingHours: string;
-  closingHours: string;
-  website: string;
-  extraInformation: string;
+  name?: string;
+  geolocation?: string;
+  openingHours?: string;
+  closingHours?: string;
+  website?: string;
+  extraInformation?: string;
+  imageUrl?: string;
 }
 
-// This type allows any string as a key and a string as a value
-interface Urls {
-  [key: string]: string;
-}
-
-const fetchActivities = async (): Promise<Activity[]> => {
-  const snapshot = await getDocs(collection(db, 'activities'));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Activity));
+const addActivity = async (newActivity: Omit<Activity, 'id'>, imageFile: File) => {
+  const imageRef = ref(getStorage(), `activities/${imageFile.name}`);
+  const uploadResult = await uploadBytes(imageRef, imageFile);
+  const imageUrl = await getDownloadURL(uploadResult.ref);
+  const docRef = await addDoc(collection(db, 'activities'), {
+    ...newActivity,
+    imageUrl,
+  });
+  return docRef.id;
 };
 
 const Activities = () => {
-  const queryClient = useQueryClient();
-  const { data: activities, isLoading, isError, error } = useQuery('activities', fetchActivities);
-  const [imageUrls, setImageUrls] = useState({});
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const geolocationRef = useRef<HTMLInputElement>(null);
+  const openingHoursRef = useRef<HTMLInputElement>(null);
+  const closingHoursRef = useRef<HTMLInputElement>(null);
+  const websiteRef = useRef<HTMLInputElement>(null);
+  const extraInformationRef = useRef<HTMLTextAreaElement>(null);
 
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
+  const fetchActivities = async () => {
+    const querySnapshot = await getDocs(collection(db, 'activities'));
+    setActivities(querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })));
   };
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const nameRef = useRef<HTMLInputElement | null>(null);
-  const geolocationRef = useRef<HTMLInputElement | null>(null);
-  const openingHoursRef = useRef<HTMLInputElement | null>(null);
-  const closingHoursRef = useRef<HTMLInputElement | null>(null);
-  const websiteRef = useRef<HTMLInputElement | null>(null);
-  const extraInformationRef = useRef<HTMLTextAreaElement | null>(null);
-  
-
+  useEffect(() => {
+    fetchActivities();
+  }, []);
 
   const handleAddActivity = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // Check for image file selection
-    if (!imageInputRef.current || !imageInputRef.current.files || imageInputRef.current.files.length === 0) {
-      console.error('Image file is not selected');
-      return;
-    }
+    if (!imageInputRef.current?.files?.[0]) return;
     const imageFile = imageInputRef.current.files[0];
-
+    const newActivityData = {
+      name: nameRef.current?.value,
+      geolocation: geolocationRef.current?.value,
+      openingHours: openingHoursRef.current?.value,
+      closingHours: closingHoursRef.current?.value,
+      website: websiteRef.current?.value,
+      extraInformation: extraInformationRef.current?.value,
+    };
   
-    // Make sure all refs are not null before proceeding
-    if (
-      nameRef.current &&
-      geolocationRef.current &&
-      openingHoursRef.current &&
-      closingHoursRef.current &&
-      websiteRef.current &&
-      extraInformationRef.current
-    ) {
-      const newActivityData = {
-        name: nameRef.current.value,
-        geolocation: geolocationRef.current.value,
-        openingHours: openingHoursRef.current.value,
-        closingHours: closingHoursRef.current.value,
-        website: websiteRef.current.value,
-        extraInformation: extraInformationRef.current.value,
-      };
-  
-      try {
-        await addActivity(newActivityData, imageFile);
-        toggleModal();
-        queryClient.invalidateQueries('activities');
-      } catch (e) {
-        console.error('Error while adding activity:', e);
-      }
-    } else {
-      console.error('One of the form refs is undefined');
+    try {
+      await addActivity(newActivityData as Omit<Activity, 'id'>, imageFile);
+      setIsModalOpen(false);
+      // Refresh the activities list
+      await fetchActivities();  // fetchActivities is the function defined in the useEffect
+    } catch (error) {
+      console.error('Error while adding activity:', error);
     }
   };
-  
 
-  useEffect(() => {
-    const fetchImageUrls = async () => {
-      const storage = getStorage();
-      const urls: Urls = {};
-
-      if (activities) {
-        const downloadUrlPromises = activities.map((activity) => {
-          const imageName = `${activity.name}.png`;
-          const imageRef = ref(storage, `activities/${imageName}`);
-          return getDownloadURL(imageRef)
-            .then((url) => {
-              urls[activity.id] = url;
-            })
-            .catch(() => {
-              // Handle any errors here, such as setting a default image
-            });
-        });
-
-        try {
-          await Promise.all(downloadUrlPromises);
-          setImageUrls(urls);
-        } catch (error) {
-          console.error('Error fetching image URLs:', error);
-        }
-      }
-    };
-
-    if (activities && activities.length > 0) {
-      fetchImageUrls();
-    }
-  }, [activities]);
-
-  if (isError) {
-    return <div>Error: {error.message}</div>; // Show error message if there's an error
-  }
+  const toggleModal = () => setIsModalOpen(!isModalOpen);
 
 
   return (
@@ -194,19 +145,20 @@ const Activities = () => {
   </div>
 )}
 
-      {isLoading && <p>Loading...</p>}
-
-      {!isLoading && (
-        <div>
-          {activities?.map((activity: any, activityIndex: number) => (
-            <div key={activity.name} className="bg-white p-4 mb-4 shadow-md rounded-md">
-              <h2 className="text-xl font-semibold">{activity.name}</h2>
-              <p className="text-gray-700">{activity.description}</p>
+      {activities.length > 0 ? (
+            <div className='grid grid-cols-3 gap-4'>
+              {activities.map((activity) => (
+                <div key={activity.id} className="bg-white p-4 shadow-md rounded-md">
+                  <img src={activity.imageUrl} />
+                  <h2 className="text-xl font-semibold text-black">{activity.name}</h2>
+                </div>
+              ))}
+              <GoogleActivities />;
             </div>
-          ))}
+          ) : (
+            <p>No activities found or they are still loading...</p>
+          )}
         </div>
-      )}
-    </div>
   );
 };
 
