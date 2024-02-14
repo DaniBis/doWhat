@@ -145,15 +145,15 @@ const Activities = () => {
   </div>
 )}
 
-      {activities.length > 0 ? (
+          {activities.length > 0 ? (
             <div className='grid grid-cols-3 gap-4'>
               {activities.map((activity) => (
                 <div key={activity.id} className="bg-white p-4 shadow-md rounded-md">
-                  <img src={activity.imageUrl} />
+                  <img src={activity.imageUrl} alt={activity.name} />
                   <h2 className="text-xl font-semibold text-black">{activity.name}</h2>
                 </div>
               ))}
-              <GoogleActivities />;
+              <GoogleActivities /> {/* Remove the semicolon here */}
             </div>
           ) : (
             <p>No activities found or they are still loading...</p>

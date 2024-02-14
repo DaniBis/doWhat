@@ -1,54 +1,70 @@
 import React, { useEffect, useState } from 'react';
 
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
 type GoogleActivity = {
-  name: string; 
+  name: string;
 };
 
 const GoogleActivities = () => {
   const [googleActivities, setGoogleActivities] = useState<GoogleActivity[]>([]);
-  
+
   useEffect(() => {
-    const fetchActivitiesFromGoogle = async () => {
-      const location = '13.7563,100.5018'; // Use appropriate latitude and longitude
-      const radius = '5000'; // Use appropriate radius
-      const type = 'tourist_attraction'; // Specify the type of places you are looking for
-      const keyword = 'things to do'; // Use appropriate keyword
-
-      // Set your API key in environment securely, do not expose it in your client-side code
-      const GOOGLE_PLACES_API_KEY = process.env.REACT_APP_GOOGLE_PLACES_API_KEY; 
-      const proxyurl = 'https://cors-anywhere.herokuapp.com/';
-      console.log(GOOGLE_PLACES_API_KEY);
-      const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-      url.search = new URLSearchParams({
-        key: GOOGLE_PLACES_API_KEY,
-        location: location,
-        radius: radius,
-        type: type,
-        keyword: keyword,
-      }).toString();
-
-      try {
-        const response = await fetch(`${proxyurl}${url.toString()}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+    window.initMap = () => {
+      const center = new window.google.maps.LatLng(18.788977, 98.992616);
+      
+      const map = new window.google.maps.Map(document.getElementById('map') as HTMLElement, {
+        center: center,
+        zoom: 15
+      });
+      
+      const request: google.maps.places.PlaceSearchRequest = {
+        location: center,
+        radius: 500,
+        type: 'restaurant'
+      };
+      
+      const service = new window.google.maps.places.PlacesService(map);
+      
+      service.nearbySearch(request, (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          const validActivities = results.filter(place => place.name).map(place => ({
+            name: place.name || ''
+          }));
+          
+          setGoogleActivities(validActivities);
         }
-        const data = await response.json();
-        setGoogleActivities(data.results || []);
-      } catch (error) {
-        console.error('Error fetching activities from Google:', error);
+      });
+    };
+
+    const loadGoogleMapsScript = () => {
+      if (typeof window.google === 'undefined') {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDg7TB7Vm3yTiPK8NAuUOXJ0HBwCqbHdew&loading=async&libraries=places`;
+        script.async = true;
+        document.head.appendChild(script);
+      } else {
+        window.initMap();
       }
     };
 
-    fetchActivitiesFromGoogle();
+    loadGoogleMapsScript();
   }, []);
 
-  // Render the activities as a list
   return (
-    <ul>
-      {googleActivities.map((activity, index) => (
-        <li key={index}>{activity.name}</li>
-      ))}
-    </ul>
+    <div>
+      <div id="map" style={{ height: '0px' }} />
+      <ul>
+        {googleActivities.map((activity, index) => (
+          <li key={index}>{activity.name}</li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
