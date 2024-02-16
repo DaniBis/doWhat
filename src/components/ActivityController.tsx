@@ -45,7 +45,8 @@ const GoogleActivities = () => {
     const loadGoogleMapsScript = () => {
       if (typeof window.google === 'undefined') {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDg7TB7Vm3yTiPK8NAuUOXJ0HBwCqbHdew&loading=async&libraries=places`;
+        const mykey = import.meta.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${mykey}&loading=async&libraries=places&callback=initMap`;
         script.async = true;
         document.head.appendChild(script);
       } else {

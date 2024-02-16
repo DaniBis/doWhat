@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './App.css';
+import 'dotenv';
 import MenuBar from './navbar/menu';
 import SignupPage from './pages/Signup';
 import LoginPage from './pages/Login';
