@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { defineConfig, loadEnv } from 'vite';
+
 
 declare global {
   interface Window {
@@ -45,8 +47,9 @@ const GoogleActivities = () => {
     const loadGoogleMapsScript = () => {
       if (typeof window.google === 'undefined') {
         const script = document.createElement('script');
-        const mykey = import.meta.env.REACT_APP_GOOGLE_PLACES_API_KEY;
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${mykey}&loading=async&libraries=places&callback=initMap`;
+        const apiKey = import.meta.env.VITE_REACT_APP_GOOGLE_PLACES_API_KEY;
+   
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=places&callback=initMap`;
         script.async = true;
         document.head.appendChild(script);
       } else {
@@ -59,7 +62,7 @@ const GoogleActivities = () => {
 
   return (
     <div>
-      <div id="map" style={{ height: '0px' }} />
+      <div id="map" style={{ height: '500px' }} />
       <ul>
         {googleActivities.map((activity, index) => (
           <li key={index}>{activity.name}</li>
